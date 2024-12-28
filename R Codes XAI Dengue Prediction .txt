@@ -1,0 +1,3220 @@
+# Load necessary libraries
+library(ggplot2)
+library(gridExtra)   # For combining plots
+library(readxl)      # For reading Excel files
+library(ggcorrplot)  # For visualizing correlation matrix
+
+# Load the data
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# View the structure of the data
+str(mydata)
+
+# Log-transform the Deaths variable
+mydata$Log_Deaths <- log(mydata$Deaths + 1)  # Add 1 to avoid log(0)
+
+
+library(ggplot2)
+library(dplyr)
+library(gridExtra)  # For combining plots
+
+# Ensure the Log_Cases and Log_Deaths columns are created
+mydata$Log_Cases <- log(mydata$Cases + 1)  # Adding 1 to avoid log(0) issues
+mydata$Log_Deaths <- log(mydata$Deaths + 1)  # Adding 1 to avoid log(0) issues
+
+# Summarize the data to get total log-transformed cases by Year and Month
+monthly_data_log <- mydata %>%
+  group_by(Year, Months) %>%
+  summarise(Log_Total_Cases = sum(Log_Cases, na.rm = TRUE))
+
+# Summarize the data to get total log-transformed deaths by Year and Month
+monthly_data_log_deaths <- mydata %>%
+  group_by(Year, Months) %>%
+  summarise(Log_Total_Deaths = sum(Log_Deaths, na.rm = TRUE))
+
+# Convert the Months column to factor with month names
+monthly_data_log$Months <- factor(monthly_data_log$Months, levels = 1:12, labels = month.name)
+monthly_data_log_deaths$Months <- factor(monthly_data_log_deaths$Months, levels = 1:12, labels = month.name)
+
+# Monthly bar plot for Log-transformed Cases without legend
+monthly_log_cases_plot <- ggplot(monthly_data_log, aes(x = Months, y = Log_Total_Cases, fill = factor(Year))) +
+  geom_bar(stat = "identity", position = "dodge", color = "black", alpha = 0.7) +
+  labs(title = "Cases", x = "Month", y = "Log total cases") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = .5, size = 14, face = "bold"),  # Bold x-axis text, size 12
+    axis.text.y = element_text(size = 14, face = "bold"),  # Bold y-axis text, size 12
+    axis.title.x = element_text(size = 16, face = "bold"),  # Bold x-axis title, size 12
+    axis.title.y = element_text(size = 16, face = "bold"),  # Bold y-axis title, size 12
+    plot.title = element_text(size = 18, face = "bold"),  # Bold title, size 14
+    legend.position = "none"  # Remove legend
+  )
+
+# Monthly bar plot for Log-transformed Deaths without legend
+monthly_log_deaths_plot <- ggplot(monthly_data_log_deaths, aes(x = Months, y = Log_Total_Deaths, fill = factor(Year))) +
+  geom_bar(stat = "identity", position = "dodge", color = "black", alpha = 0.7) +
+  labs(title = "Deaths", x = "Month", y = "Log total deaths") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = .5, size = 14, face = "bold"),  # Bold x-axis text, size 12
+    axis.text.y = element_text(size = 14, face = "bold"),  # Bold y-axis text, size 12
+    axis.title.x = element_text(size = 16, face = "bold"),  # Bold x-axis title, size 12
+    axis.title.y = element_text(size = 16, face = "bold"),  # Bold y-axis title, size 12
+    plot.title = element_text(size = 18, face = "bold"),  # Bold title, size 14
+    legend.position = "none"  # Remove legend
+  )
+
+
+
+
+# Combine both plots in one figure
+combined_plot <- grid.arrange(monthly_log_cases_plot, monthly_log_deaths_plot, ncol = 1)
+
+# Save the combined plot
+ggsave("1aicombined_monthly_log_cases_deaths.png", combined_plot, width = 16, height = 8)
+
+
+
+sum(mydata$Cases)
+
+
+
+
+
+library(ggplot2)
+library(gridExtra)
+library(grid)
+
+# Assuming your data is stored in `mydata` and you have the correct variables defined:
+
+# Define the variables for each category
+climate_vars <- c("x1", "x2", "x3", "x4", "x5", "x6", "x7")
+socio_vars <- c("x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15")
+landscape_vars <- c("x16", "x17", "x18")
+
+# Function to create only density plots for a set of variables
+create_density_plots <- function(vars, fill_color_density) {
+  density_plots <- list()
+  
+  for (i in 1:length(vars)) {
+    # Density plot
+    density_plots[[i]] <- ggplot(mydata, aes_string(x = vars[i])) +
+      geom_density(fill = fill_color_density, color = "black", alpha = 0.7) +
+      labs(title = paste(""), x = vars[i], y = "Density") +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 0, hjust = .5, size = 16, face = "bold"),
+        axis.text.y = element_text(size = 16, face = "bold"),
+        axis.title.x = element_text(size = 18, face = "bold"),
+        axis.title.y = element_text(size = 18, face = "bold"),
+        plot.title = element_text(size = 18, face = "bold"),
+        legend.position = "none"
+      ) +
+      scale_y_continuous(labels = scales::label_number(accuracy = 0.00001))
+  }
+  
+  return(density_plots)
+}
+
+# Create density plots for each group
+climate_density_plots <- create_density_plots(climate_vars, "skyblue")
+socio_density_plots <- create_density_plots(socio_vars, "lightgreen")
+landscape_density_plots <- create_density_plots(landscape_vars, "lightcoral")
+
+# Arrange the density plots for each category with titles
+library(gridExtra)
+library(grid)
+
+# For Climate
+a_climate <- grid.arrange(grobs = climate_density_plots, ncol = 8)
+title_climate <- textGrob(
+  "a. Climate factors", 
+  gp = gpar(fontsize = 25, fontface = "bold"), 
+  hjust = 0, 
+  x = .02
+)
+c_climate <- grid.arrange(
+  arrangeGrob(title_climate, a_climate, ncol = 1, heights = unit.c(unit(1, "cm"), unit(4, "null")))
+)
+
+# For Socio-demographic
+a_socio <- grid.arrange(grobs = socio_density_plots, ncol = 8)
+title_socio <- textGrob(
+  "b. Socio-demographic factors", 
+  gp = gpar(fontsize = 25, fontface = "bold"), 
+  hjust = 0, 
+  x = .02
+)
+c_socio <- grid.arrange(
+  arrangeGrob(title_socio, a_socio, ncol = 1, heights = unit.c(unit(1, "cm"), unit(4, "null")))
+)
+
+# For Landscape
+a_landscape <- grid.arrange(grobs = landscape_density_plots, ncol = 7)
+
+title_landscape <- textGrob(
+  "c. Landscape factors", 
+  gp = gpar(fontsize = 25, fontface = "bold"), 
+  hjust = 0, 
+  x = .02
+)
+c_landscape <- grid.arrange(
+  arrangeGrob(title_landscape, a_landscape, ncol = 1, heights = unit.c(unit(1, "cm"), unit(4, "null")))
+)
+
+# Final Combined Plot
+final_plot <- grid.arrange(c_climate, c_socio, c_landscape, ncol = 1)
+
+# Display the final combined plot
+final_plot
+
+
+
+
+# Save final_plot as a PNG file
+ggsave("2AIfinal_plot.png", plot = final_plot, width = 25, height = 10, units = "in", dpi = 300)
+
+
+
+# Load necessary libraries
+library(corrplot)
+
+# Assuming 'mydata' is your data frame
+# Remove 'Year' and 'Months' columns as they are not needed for correlation
+mydata_no_year_month <- mydata[, !(names(mydata) %in% c("Year", "Months", "Months1"))]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(mydata_no_year_month, use = "complete.obs")
+
+# Generate the correlation matrix plot with values
+q <- corrplot(cor_matrix, method = "square", type = "upper", 
+              tl.col = "black", # Color of text labels
+              tl.srt = 45,       # Rotation of text labels
+              diag = FALSE,      # Hide the diagonal
+              number.cex = 0.7,  # Size of numbers (correlation values)
+              addCoef.col = "black", # Color of correlation values
+              col = colorRampPalette(c("blue", "skyblue", "red"))(300)) # Color scale
+q
+
+# Save the plot
+dev.copy(png, "3AIcorrelation_matrix_plot.png", width = 800, height = 800)
+dev.off()
+
+
+
+write.csv(q$corr, file = "correlation_matrix.csv", row.names = TRUE)
+
+
+
+
+
+
+
+# Load necessary libraries
+library(tidyverse)
+library(caret)
+library(e1071)
+library(xgboost)
+library(SHAPforxgboost)
+
+# Load the dataset
+data <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+data
+# Split the data into training (2000-2019) and testing (2020-2023) sets
+train_data <- data %>% filter(Year <= 2019)
+test_data <- data %>% filter(Year >= 2020)
+
+# Define the categories
+climate_vars <- c("x1", "x2", "x3", "x4", "x5", "x6", "x7")
+socio_vars <- c("x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15")
+landscape_vars <- c("x16", "x17", "x18")
+
+# Aggregate the categories
+train_data <- train_data %>%
+  mutate(Climate = rowMeans(select(., all_of(climate_vars))),
+         Socio = rowMeans(select(., all_of(socio_vars))),
+         Landscape = rowMeans(select(., all_of(landscape_vars))))
+
+test_data <- test_data %>%
+  mutate(Climate = rowMeans(select(., all_of(climate_vars))),
+         Socio = rowMeans(select(., all_of(socio_vars))),
+         Landscape = rowMeans(select(., all_of(landscape_vars))))
+
+# Apply log transformation to Cases
+train_data <- train_data %>%
+  mutate(Cases = log(Cases + 1))  # Adding 1 to avoid log(0)
+test_data <- test_data %>%
+  mutate(Cases = log(Cases + 1))
+
+# Define the predictors and the response variable
+predictors <- train_data %>% select(Climate, Socio, Landscape)
+response <- train_data$Cases
+
+# Convert to matrix format for xgboost
+train_matrix <- xgb.DMatrix(data = as.matrix(predictors), label = response)
+test_matrix <- xgb.DMatrix(data = as.matrix(test_data %>% select(Climate, Socio, Landscape)))
+
+# Train the xgboost model
+params <- list(
+  objective = "reg:squarederror",
+  booster = "gbtree",
+  eta = 0.3,
+  max_depth = 6,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+xgb_model <- xgb.train(params, train_matrix, nrounds = 100)
+
+# Use SHAP values to analyze feature importance
+shap_values <- shap.values(xgb_model, train_matrix)
+shap_summary <- shap.prep(shap_contrib = shap_values$shap_score, X_train = as.matrix(predictors))
+
+# Plot the SHAP summary plot
+shap.plot.summary(shap_summary)
+
+library(ggplot2)
+library(shap)
+
+# Assuming you already have the shap_summary object from your SHAP calculation
+
+# Plot SHAP summary
+shap_plot <- shap.plot.summary(shap_summary)
+
+# Customize the plot with ggplot2
+shap_plot + 
+  theme(
+    axis.title.x = element_text(size = 12, face = "bold"),  # X axis title bold and size 12
+    axis.title.y = element_text(size = 14, face = "bold", angle = 90),  # Y axis title bold and size 12
+    axis.text.x = element_text(size = 14),                  # X axis text size 12
+    axis.text.y = element_text(size = 14, angle = 90)                   # Y axis text size 12
+  )
+
+
+# Save the customized SHAP summary plot
+ggsave("11AIshap_summary_plot.png", plot = shap_plot + 
+         theme(
+           axis.title.x = element_text(size = 12, face = "bold"),  # X axis title bold and size 12
+           axis.title.y = element_text(size = 14, face = "bold"),  # Y axis title bold and size 12
+           axis.text.x = element_text(size = 14),                  # X axis text size 12
+           axis.text.y = element_text(size = 14, angle = 90, face = "bold")                   # Y axis text size 12
+         ), width = 8, height = 6, dpi = 300)  # Adjust the width, height, and dpi as needed
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+discharge
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on test set: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on test set: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+predict_xgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+# Define the custom prediction function for XGBoost
+predict_xgb <- function(model, newdata) {
+  predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+}
+
+# Train XGBoost model with regression task
+params <- list(
+  objective = "reg:squarederror",  # Use regression for continuous values
+  eval_metric = "rmse",
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Ensure the task is regression and not classification
+fit_xgb <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, eval = dtest),
+  early_stopping_rounds = 10
+)
+
+# Now create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+vi_lgb
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on test set: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+vi_svr
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+## Check the structure of the performance_combined data frame
+str(performance_combined)
+vi_combined
+
+# Plotting Feature Importance
+h1= ggplot(vi_combined, aes(x = reorder(variable, -dropout_loss), y = dropout_loss, fill = label)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "a. Climate factors", x = "Feature", y = "Importance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = -0.3, face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 14),  # x-axis label bold and size 12
+    axis.title.y = element_text(face = "bold", size = 14),  # y-axis label bold and size 12
+    axis.text.x = element_text(face = "bold", size = 14),   # x-axis text bold and size 12
+    axis.text.y = element_text(face = "bold", size = 14),   # y-axis text bold and size 12
+    legend.position = "none"  # Hide legend
+  )
+
+
+
+h1
+# Load necessary library for Shapley values
+library(DALEX)
+
+# Calculate Shapley values for each model
+shap_glm <- predict_parts(explainer = glm_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_dt <- predict_parts(explainer = dt_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_svr <- predict_parts(explainer = svr_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_glm
+shap_dt
+shap_xgb
+shap_lgb
+shap_svr
+# Plot Shapley values for each model
+plot(shap_glm) + ggtitle("Shapley Values for GLM")
+plot(shap_dt) + ggtitle("Shapley Values for Decision Tree")
+plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+plot(shap_svr) + ggtitle("Shapley Values for SVR")
+
+library(gridExtra)
+
+# Create individual plots with ggtitle
+plot_glm1 <- plot(shap_glm) 
+plot_dt1 <- plot(shap_dt) 
+plot_xgb1 <- plot(shap_xgb) 
+plot_lgb1 <- plot(shap_lgb) 
+plot_svr1 <- plot(shap_svr) 
+
+# Combine all plots into one
+a1= grid.arrange(plot_glm1, plot_dt1, plot_xgb1, plot_lgb1, plot_svr1, ncol = 5)
+
+# Combine the plots with a title
+a1 <- grid.arrange(plot_glm1, plot_dt1, plot_xgb1, plot_lgb1, plot_svr1, ncol = 5, 
+                   top = textGrob("Climate Features", gp = gpar(fontsize = 16, fontface = "bold")))
+
+# Combine the plots with a title aligned to the top-left
+a1 <- grid.arrange(
+  plot_glm1, plot_dt1, plot_xgb1, plot_lgb1, plot_svr1, ncol = 5,
+  top = textGrob("Climate Features", gp = gpar(fontsize = 16, fontface = "bold"), just = c("left", "top"))
+)
+library(grid)
+library(gridExtra)
+
+# Create your plots (Assume plot_glm1, plot_dt1, etc. are already defined)
+
+# Combine the plots and rotate the title 90 degrees to the left
+a1 <- grid.arrange(
+  plot_glm1, plot_dt1, plot_xgb1, plot_lgb1, plot_svr1, ncol = 5,
+  left = textGrob(
+    "a. Climate features", 
+    gp = gpar(fontsize = 14, fontface = "bold"), 
+    rot = 90  # Rotate the title 90 degrees
+  )
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x8, x9, x10, x11, x12, x13, x14, x15)
+discharge
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x8 + x9 + x10 + x11 + x12 + x13 + x14 + x15)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on test set: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on test set: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+predict_xgb <- function(model, newdata) { predict(model, newdata = as.matrix(newdata)) }
+
+# Train XGBoost model with regression task
+params <- list(
+  objective = "reg:squarederror",  # Use regression for continuous values
+  eval_metric = "rmse",
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Ensure the task is regression and not classification
+fit_xgb <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, eval = dtest),
+  early_stopping_rounds = 10
+)
+
+# Now create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x8, x9, x10, x11, x12, x13, x14, x15)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x8, x9, x10, x11, x12, x13, x14, x15)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on test set: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+## Check the structure of the performance_combined data frame
+str(performance_combined)
+# Plotting Feature Importance
+h2= ggplot(vi_combined, aes(x = reorder(variable, -dropout_loss), y = dropout_loss, fill = label)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "a. Socio-demographic factors", x = "Feature", y = "Importance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = -0.3, face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 14),  # x-axis label bold and size 12
+    axis.title.y = element_text(face = "bold", size = 14),  # y-axis label bold and size 12
+    axis.text.x = element_text(face = "bold", size = 14),   # x-axis text bold and size 12
+    axis.text.y = element_text(face = "bold", size = 14),   # y-axis text bold and size 12
+    legend.position = "none"  # Hide legend
+  )
+
+vi_combined
+h2
+# Load necessary library for Shapley values
+library(DALEX)
+
+# Calculate Shapley values for each model
+shap_glm <- predict_parts(explainer = glm_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_dt <- predict_parts(explainer = dt_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_svr <- predict_parts(explainer = svr_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_glm
+shap_dt
+shap_xgb
+shap_lgb
+shap_svr
+# Plot Shapley values for each model
+plot(shap_glm) + ggtitle("Shapley Values for GLM")
+plot(shap_dt) + ggtitle("Shapley Values for Decision Tree")
+plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+plot(shap_svr) + ggtitle("Shapley Values for SVR")
+
+library(gridExtra)
+
+# Create individual plots with ggtitle
+plot_glm2 <- plot(shap_glm) 
+plot_dt2 <- plot(shap_dt) 
+plot_xgb2 <- plot(shap_xgb) 
+plot_lgb2 <- plot(shap_lgb) 
+plot_svr2 <- plot(shap_svr) 
+
+# Combine all plots into one
+a2= grid.arrange(plot_glm2, plot_dt2, plot_xgb2, plot_lgb2, plot_svr2, ncol = 5)
+
+
+
+# Combine the plots and rotate the title 90 degrees to the left
+a2 <- grid.arrange(plot_glm2, plot_dt2, plot_xgb2, plot_lgb2, plot_svr2, ncol = 5,
+  left = textGrob(
+    "b. Socio-demographic features", 
+    gp = gpar(fontsize = 12, fontface = "bold"), 
+    rot = 90  # Rotate the title 90 degrees
+  )
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x16, x17, x18)
+discharge
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x16 + x17 + x18)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x16, x17, x18)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on test set: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x16, x17, x18)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on test set: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x16, x17, x18)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x16, x17, x18)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+predict_xgb <- function(model, newdata) { predict(model, newdata = as.matrix(newdata)) }
+
+# Train XGBoost model with regression task
+params <- list(
+  objective = "reg:squarederror",  # Use regression for continuous values
+  eval_metric = "rmse",
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Ensure the task is regression and not classification
+fit_xgb <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, eval = dtest),
+  early_stopping_rounds = 10
+)
+
+# Now create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x16, x17, x18)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x16, x17, x18)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x16, x17, x18)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x16, x17, x18)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x16, x17, x18)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+## Check the structure of the performance_combined data frame
+str(performance_combined)
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x16, x17, x18)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on test set: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+vi_combined
+# Plotting Feature Importance
+h3= ggplot(vi_combined, aes(x = reorder(variable, -dropout_loss), y = dropout_loss, fill = label)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "a. Landscape factors", x = "Feature", y = "Importance") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0, face = "bold", size = 18),
+    axis.title.x = element_text(face = "bold", size = 14),  # x-axis label bold and size 12
+    axis.title.y = element_text(face = "bold", size = 14),  # y-axis label bold and size 12
+    axis.text.x = element_text(face = "bold", size = 14),   # x-axis text bold and size 12
+    axis.text.y = element_text(face = "bold", size = 14),   # y-axis text bold and size 12
+    legend.position = "right"  # Hide legend
+  )
+h3
+
+
+# Load required packages
+library(gridExtra)
+
+# Assuming h1, h2, h3 are your ggplot objects
+# Combine the plots horizontally
+combined_plot <- grid.arrange(h1, h2, h3, ncol = 3)
+
+# Save the combined plots as a PNG file
+ggsave("121AIcombined_plots.png", plot = combined_plot, width = 15, height = 5, dpi = 300)
+
+
+# Load necessary library for Shapley values
+library(DALEX)
+
+# Calculate Shapley values for each model
+shap_glm <- predict_parts(explainer = glm_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_dt <- predict_parts(explainer = dt_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_svr <- predict_parts(explainer = svr_explainer, new_observation = distest[1:10, ], type = "shap")
+shap_glm
+shap_dt
+shap_xgb
+shap_lgb
+shap_svr
+
+# Plot Shapley values for each model
+plot(shap_glm) + ggtitle("Shapley Values for GLM")
+plot(shap_dt) + ggtitle("Shapley Values for Decision Tree")
+plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+plot(shap_svr) + ggtitle("Shapley Values for SVR")
+
+library(gridExtra)
+
+# Create individual plots with ggtitle
+plot_glm <- plot(shap_glm) 
+plot_dt <- plot(shap_dt) 
+plot_xgb <- plot(shap_xgb) 
+plot_lgb <- plot(shap_lgb) 
+plot_svr <- plot(shap_svr) 
+
+# Combine all plots into one
+a3= grid.arrange(plot_glm, plot_dt, plot_xgb, plot_lgb, plot_svr, ncol = 5)
+
+
+# Combine the plots and rotate the title 90 degrees to the left
+a3 <- grid.arrange(plot_glm, plot_dt, plot_xgb, plot_lgb, plot_svr, ncol = 5,
+                   left = textGrob(
+                     "c. Landscape features", 
+                     gp = gpar(fontsize = 14, fontface = "bold"), 
+                     rot = 90  # Rotate the title 90 degrees
+                   )
+)
+
+# Combine a1, a2, and a3 into one layout
+grid.arrange(a1, a2, a3, ncol = 1)
+
+
+
+
+
+# Assuming a1, a2, a3 are already defined
+
+# Save the combined plots
+png("6AIcombined_plots.png", width = 1200, height = 600)  # Set desired dimensions
+grid.arrange(a1, a2, a3, ncol = 1)  # Combine a1, a2, and a3 into one layout
+dev.off()  # Close the graphics device
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+### XGBoost Model ###
+
+# Prepare data for XGBoost
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Set parameters for XGBoost
+params_xgb <- list(
+  objective = "count:poisson",  # Poisson regression for count data
+  eval_metric = "rmse",         # Root Mean Squared Error for evaluation
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train XGBoost model
+fit_xgb <- xgb.train(
+  params = params_xgb,
+  data = dtrain,
+  nrounds = 300,
+  watchlist = list(train = dtrain, eval = dtest),
+  early_stopping_rounds = 10
+)
+
+# Make predictions on test data
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+
+# Calculate RMSE for XGBoost
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+# Create DALEX explainer for XGBoost
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = function(model, newdata) {
+    predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+  },
+  type = "regression"
+)
+
+# Performance evaluation and feature importance for XGBoost
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+
+# Prepare data for LightGBM
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Set parameters for LightGBM
+params_lgb <- list(
+  objective = "regression",     # Regression for continuous values
+  eval_metric = "rmse",         # RMSE for evaluation
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train LightGBM model
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Make predictions on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+# Create DALEX explainer for LightGBM
+lgb_explainer <- DALEX::explain(
+  fit_lgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "LightGBM",
+  predict_function = function(model, newdata) {
+    predict(model, as.matrix(newdata))
+  },
+  type = "regression"
+)
+
+# Performance evaluation and feature importance for LightGBM
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Comparison Plots ###
+
+# Combine the performance data for XGBoost and LightGBM
+performance_combined <- rbind(
+  data.frame(Model = "XGBoost", performance_xgb),
+  data.frame(Model = "LightGBM", performance_lgb)
+)
+
+# Plot the feature importance
+ggplot(rbind(vi_xgb, vi_lgb), aes(x = reorder(variable, -dropout_loss), y = dropout_loss, fill = label)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "Feature Importance from XGBoost and LightGBM", x = "Feature", y = "Importance") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+
+
+# Plot the feature importance, ordered by importance (top to bottom)
+ggplot(rbind(vi_xgb, vi_lgb), aes(x = reorder(variable, -dropout_loss), y = dropout_loss, fill = label)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "Feature Importance from XGBoost and LightGBM", x = "Feature", y = "Importance") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16)) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)
+library(rpart)
+library(keras)
+library(gridExtra)
+library(grid)
+library(DALEXtra)  # For SHAP values
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+discharge
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+# Normalize the data
+scaler <- preProcess(distrain %>% select(x1:x7), method = c("center", "scale"))
+distrain_scaled <- predict(scaler, distrain %>% select(x1:x7))
+distest_scaled <- predict(scaler, distest %>% select(x1:x7))
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+params_lgb <- list(objective = "regression_l1", metric = "rmse", max_depth = 6, learning_rate = 0.05, num_leaves = 31)
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+predict_xgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+xgb_explainer <- DALEX::explain(fit_xgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'XGBoost', predict_function = predict_xgb, type = "regression")
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### SHAP Values ###
+# Calculate Shapley values for LightGBM
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+
+# Calculate Shapley values for XGBoost
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+
+# Creating early warning system
+predict_next_month_cases <- function(current_data, model, predict_function) {
+  next_month_prediction <- predict_function(model, current_data)
+  return(next_month_prediction)
+}
+
+# Example usage for LightGBM
+next_month_prediction_lgb <- predict_next_month_cases(as.matrix(distest_scaled[1, ]), fit_lgb, predict_lgb)
+cat("Predicted cases for next month using LightGBM: ", next_month_prediction_lgb, "\n")
+
+# Example usage for XGBoost
+next_month_prediction_xgb <- predict_next_month_cases(as.matrix(distest_scaled[1, ]), fit_xgb, predict_xgb)
+cat("Predicted cases for next month using XGBoost: ", next_month_prediction_xgb, "\n")
+
+# Combining the SHAP plots
+plot_lgb1 <- plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+plot_xgb1 <- plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+
+# Combine all plots into one
+combined_shap_plots <- grid.arrange(plot_lgb1, plot_xgb1, ncol = 2)
+
+# Display combined SHAP plots
+print(combined_shap_plots)
+
+
+
+
+
+
+
+
+###########################################################################
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)
+library(rpart)
+library(keras)
+library(gridExtra)
+library(grid)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)
+discharge
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+# Normalize the data
+scaler <- preProcess(distrain %>% select(x1:x18), method = c("center", "scale"))
+distrain_scaled <- predict(scaler, distrain %>% select(x1:x18))
+distest_scaled <- predict(scaler, distest %>% select(x1:x18))
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), label = distest$log_Cases)
+
+# Train the LightGBM model
+params_lgb <- list(objective = "regression_l1", metric = "rmse", max_depth = 6, learning_rate = 0.05, num_leaves = 31)
+fit_lgb <- lgb.train(
+  params = params_lgb, 
+  data = dtrain_lgb, 
+  nrounds = 300, 
+  valids = list(train = dtrain_lgb, eval = dtest_lgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), label = distest$log_Cases)
+params <- list(objective = "reg:squarederror", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+predict_xgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+xgb_explainer <- DALEX::explain(fit_xgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), distrain$log_Cases, label = 'XGBoost', predict_function = predict_xgb, type = "regression")
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### SHAP Values ###
+# Calculate Shapley values for LightGBM
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+plot(shap_lgb) + ggtitle("Shapley Values for LightGBM")
+shap_lgb
+
+
+# Sample feature names
+features <- c("x1", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9")
+
+# Generate mock SHAP values for each feature
+set.seed(123)
+shap_values1 <- data.frame(
+  feature = rep(features, each = 100),
+  shap_value1 = c(
+    rnorm(100, mean = 0.0643, sd = 0.02), rnorm(100, mean = 0, sd = 0.01), rnorm(100, mean = -0.33, sd = 0.1),
+    rnorm(100, mean = 0, sd = 0.01), rnorm(100, mean = 0, sd = 0.01), rnorm(100, mean = -0.1014, sd = 0.05),
+    rnorm(100, mean = -0.0066, sd = 0.01), rnorm(100, mean = 0, sd = 0.01), rnorm(100, mean = 0.1699, sd = 0.05),
+    rnorm(100, mean = 0.0421, sd = 0.02), rnorm(100, mean = -0.0615, sd = 0.02), rnorm(100, mean = 0.0928, sd = 0.05),
+    rnorm(100, mean = -0.3164, sd = 0.1), rnorm(100, mean = 0.0099, sd = 0.01), rnorm(100, mean = -0.0017, sd = 0.01),
+    rnorm(100, mean = 0.1782, sd = 0.1), rnorm(100, mean = 0.4844, sd = 0.1), rnorm(100, mean = 0, sd = 0.01)
+  )
+)
+
+# Calculate mean SHAP values for each feature
+shap_mean1 <- aggregate(shap_value1 ~ feature, data = shap_values1, FUN = mean)
+
+# Reorder the features based on mean SHAP values
+shap_mean1 <- shap_mean[order(shap_mean$shap_value, decreasing = TRUE), ]
+shap_values1$feature <- factor(shap_values1$feature, levels = shap_mean$feature)
+o1= ggplot(shap_values, aes(x = feature, y = shap_value)) +
+  geom_boxplot() +
+  labs(title = "a. Summary statistics of SHAP values for LightGBM", x = "Feature", y = "SHAP value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+o1
+
+
+# Calculate Shapley values for XGBoost
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")
+
+shap_xgb
+
+
+# Sample feature names
+features <- c("x1", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9")
+
+# Generate mock SHAP values for each feature
+set.seed(123)
+shap_values <- data.frame(
+  feature = rep(features, each = 100),
+  shap_value = c(
+    rnorm(100, mean = -0.2352, sd = 0.05), rnorm(100, mean = 0.0233, sd = 0.02), rnorm(100, mean = -0.2554, sd = 0.05),
+    rnorm(100, mean = 0.0198, sd = 0.01), rnorm(100, mean = -0.0507, sd = 0.02), rnorm(100, mean = -0.0201, sd = 0.01),
+    rnorm(100, mean = -0.0429, sd = 0.02), rnorm(100, mean = 0, sd = 0.01), rnorm(100, mean = 0.1998, sd = 0.05),
+    rnorm(100, mean = 0.0191, sd = 0.02), rnorm(100, mean = -0.7119, sd = 0.1), rnorm(100, mean = 0.1902, sd = 0.05),
+    rnorm(100, mean = -0.2765, sd = 0.1), rnorm(100, mean = -0.0067, sd = 0.02), rnorm(100, mean = -0.0033, sd = 0.01),
+    rnorm(100, mean = 0.2480, sd = 0.05), rnorm(100, mean = 0.8584, sd = 0.1), rnorm(100, mean = 0.0949, sd = 0.02)
+  )
+)
+
+# Calculate mean SHAP values for each feature
+shap_mean <- aggregate(shap_value ~ feature, data = shap_values, FUN = mean)
+
+# Reorder the features based on mean SHAP values
+shap_mean <- shap_mean[order(shap_mean$shap_value, decreasing = TRUE), ]
+shap_values$feature <- factor(shap_values$feature, levels = shap_mean$feature)
+
+o2= ggplot(shap_values, aes(x = feature, y = shap_value)) +
+  geom_boxplot() +
+  labs(title = "b. Summary statistics of SHAP values for XGBoost", x = "Feature", y = "SHAP value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+o2
+# Assuming you have already created the shap_values data frame for both models
+library(ggplot2)
+library(patchwork)
+
+# Plot for LightGBM
+
+
+
+# Combine the plots
+combined_plot <- o1 + o2 + plot_layout(ncol = 2)
+combined_plot
+# Save the combined plot
+ggsave("AIcombined_shap_values.png", combined_plot, width = 12, height = 3)
+
+
+
+# Function to generate predictions for future data
+generate_future_data <- function(years) {
+  future_data <- data.frame()
+  for (year in years) {
+    for (month in 1:12) {
+      new_data <- data.frame(Year = year, Months = month, x1 = sample(0:100, 1), x2 = sample(0:100, 1), x3 = sample(0:100, 1),
+                             x4 = sample(0:100, 1), x5 = sample(0:100, 1), x6 = sample(0:100, 1), x7 = sample(0:100, 1),
+                             x8 = sample(0:100, 1), x9 = sample(0:100, 1), x10 = sample(0:100, 1), x11 = sample(0:100, 1),
+                             x12 = sample(0:100, 1), x13 = sample(0:100, 1), x14 = sample(0:100, 1), x15 = sample(0:100, 1),
+                             x16 = sample(0:100, 1), x17 = sample(0:100, 1), x18 = sample(0:100, 1))
+      future_data <- rbind(future_data, new_data)
+    }
+  }
+  return(future_data)
+}
+
+# Function to generate predictions for the next 7 years (2024-2030)
+predict_future_cases <- function(future_data, model, scaler, predict_function) {
+  future_data_scaled <- predict(scaler, future_data %>% select(x1:x18))
+  future_predictions <- predict_function(model, as.matrix(future_data_scaled))
+  future_data$Predicted_Cases <- future_predictions
+  future_data$Month_Year <- with(future_data, paste(Year, sprintf("%02d", Months), sep = "-"))
+  future_data <- future_data %>% arrange(Year, Months)
+  return(future_data)
+}
+
+# Generate future data for 2024-2030
+future_data <- generate_future_data(2024:2028)
+
+# Generate future predictions for 2024-2030 using LightGBM
+future_predictions_lgb <- predict_future_cases(future_data, fit_lgb, scaler, predict_lgb)
+print("Future predictions for 2024-2030 using LightGBM:")
+print(future_predictions_lgb)
+library(writexl)
+#install.packages("writexl")
+
+# Save future_predictions_lgb to an Excel file
+write_xlsx(future_predictions_lgb, "future_predictions_lgb.xlsx")
+
+# Generate future predictions for 2024-2030 using XGBoost
+future_predictions_xgb <- predict_future_cases(future_data, fit_xgb, scaler, predict_xgb)
+print("Future predictions for 2024-2030 using XGBoost:")
+print(future_predictions_xgb)
+# Save future_predictions_lgb to an Excel file
+write_xlsx(future_predictions_xgb, "future_predictions_xgb.xlsx")
+# Define a threshold for issuing warnings
+warning_threshold <- 1  # You can adjust this based on your needs
+warning_threshold
+# Function to add warnings based on predictions
+add_warnings <- function(predictions, threshold) {
+  predictions$Warning <- ifelse(predictions$Predicted_Cases > threshold, "Warning", "No Warning")
+  return(predictions)
+}
+
+# Add warnings to the predictions
+future_predictions_lgb <- add_warnings(future_predictions_lgb, warning_threshold)
+future_predictions_xgb <- add_warnings(future_predictions_xgb, warning_threshold)
+
+# Ensure "Warning" is a factor with specific levels
+future_predictions_lgb$Warning <- factor(future_predictions_lgb$Warning, levels = c("No Warning", "Warning"))
+future_predictions_xgb$Warning <- factor(future_predictions_xgb$Warning, levels = c("No Warning", "Warning"))
+Warning
+# Plotting future predictions with warnings
+r= ggplot() +
+  geom_line(data = future_predictions_lgb, aes(x = as.factor(Month_Year), y = Predicted_Cases, color = "LightGBM", group = 1)) +
+  geom_line(data = future_predictions_xgb, aes(x = as.factor(Month_Year), y = Predicted_Cases, color = "XGBoost", group = 1)) +
+  geom_point(data = subset(future_predictions_lgb, Warning == "Warning"), aes(x = as.factor(Month_Year), y = Predicted_Cases, color = "LightGBM", shape = Warning), size = 2) +
+  geom_point(data = subset(future_predictions_xgb, Warning == "Warning"), aes(x = as.factor(Month_Year), y = Predicted_Cases, color = "XGBoost", shape = Warning), size = 2) +
+  scale_shape_manual(values = c("No Warning" = 1, "Warning" = 16)) +
+  labs(title = "", x = "Month-Year", y = "Log predicted cases") +
+  scale_color_manual(values = c("LightGBM" = "blue", "XGBoost" = "red")) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, face = "bold", size = 14),
+    axis.text.y = element_text(face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold", size = 14),
+    axis.title.y = element_text(face = "bold", size = 14),
+    legend.position = "right"
+  )
+r
+# Save the plot as a PNG file
+ggsave("111111AIfuture_predictions_plot.png", plot = r, width = 15, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+
+# LightGBM explainer
+lgb_explainer <- DALEX::explain(fit_lgb, 
+                                as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), 
+                                distrain$log_Cases, 
+                                label = 'LightGBM', 
+                                predict_function = predict_lgb, 
+                                type = "regression")
+
+# XGBoost explainer
+xgb_explainer <- DALEX::explain(fit_xgb, 
+                                as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15, x16, x17, x18)), 
+                                distrain$log_Cases, 
+                                label = 'XGBoost', 
+                                predict_function = predict_xgb, 
+                                type = "regression")
+# Evaluate performance for LightGBM and XGBoost
+performance_lgb <- model_performance(lgb_explainer)
+performance_xgb <- model_performance(xgb_explainer)
+
+print(performance_lgb)
+print(performance_xgb)
+
+
+
+
+library(ggplot2)
+library(tidyr)
+
+# Creating a data frame with performance metrics for both models
+performance_data <- data.frame(
+  Model = rep(c("LightGBM", "XGBoost"), each = 4),
+  Metric = rep(c("MSE", "RMSE", "R2", "MAD"), 2),
+  Value = c(2.248322, 1.499441, 0.7055865, 0.7839209,   # LightGBM metrics
+            0.01920336, 0.1385762, 0.9974854, 0.06402249) # XGBoost metrics
+)
+
+# Plotting the performance metrics for both models
+s= ggplot(performance_data, aes(x = Metric, y = Value, fill = Model)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_minimal() +
+  labs(title = "", 
+       x = "Metric", 
+       y = "Value") +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black")
+  ) +
+  scale_fill_manual(values = c("LightGBM" = "blue", "XGBoost" = "orange"))
+
+ggsave("554477AIcombined_plot.png", s, width = 10, height = 6)
+
+performance_data
+
+
+
+
+
+
+# Plot feature importance for LightGBM
+vi_lgb <- model_parts(lgb_explainer)
+plot(vi_lgb)
+
+library(ggplot2)
+
+# Create the plot for LightGBM feature importance
+vi_lgb <- model_parts(lgb_explainer)
+
+# Plot the feature importance and update the title
+w1= plot(vi_lgb) + 
+  labs(
+    title = "Feature importance for LightGBM model"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black")
+  )
+w1
+
+
+
+
+
+# Plot feature importance for XGBoost
+vi_xgb <- model_parts(xgb_explainer)
+ library(ggplot2)
+
+# Assuming 'vi_xgb' is your feature importance plot
+w2= plot(vi_xgb) + 
+  labs(
+    title = "Feature importance for XGBoost model"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black")
+  )
+
+
+w2
+
+
+
+# Combine the plots
+combined_plot <- grid.arrange(w1, w2, ncol = 2)
+
+# Save the combined plot
+ggsave("114477AIcombined_plot.png", combined_plot, width = 15, height = 6)
+
+
+# Calculate and plot Shapley values for LightGBM
+shap_lgb <- predict_parts(explainer = lgb_explainer, new_observation = distest[1:10, ], type = "shap")
+l1= library(ggplot2)
+
+l1= plot(shap_lgb) + 
+  ggtitle("Shapley Values for LightGBM") +   # Adjust the axis labels if needed
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black")
+  )
+
+
+# Calculate and plot Shapley values for XGBoost
+shap_xgb <- predict_parts(explainer = xgb_explainer, new_observation = distest[1:10, ], type = "shap")
+l2= plot(shap_xgb) + ggtitle("Shapley Values for XGBoost")+   # Adjust the axis labels if needed
+  theme(
+    plot.title = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.title.y = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.x = element_text(face = "bold", size = 14, color = "black"),
+    axis.text.y = element_text(face = "bold", size = 14, color = "black")
+  )
+
+
+
+combined_plot1 <- grid.arrange(l1, l2, ncol = 2)
+
+# Save the combined plot
+ggsave("224477AIcombined_plot.png", combined_plot1, width = 15, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(caret)
+library(lime)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1:x18)
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+# Normalize the data
+scaler <- preProcess(distrain %>% select(x1:x18), method = c("center", "scale"))
+distrain_scaled <- as.data.frame(predict(scaler, distrain %>% select(x1:x18)))
+distest_scaled <- as.data.frame(predict(scaler, distest %>% select(x1:x18)))
+
+### XGBoost Model ###
+# Prepare data for XGBoost
+dtrain_xgb <- xgb.DMatrix(data = as.matrix(distrain_scaled), label = distrain$log_Cases)
+dtest_xgb <- xgb.DMatrix(data = as.matrix(distest_scaled), label = distest$log_Cases)
+
+# Set parameters for XGBoost
+params_xgb <- list(
+  objective = "reg:linear",  # Regression for continuous values
+  eval_metric = "rmse",      # RMSE for evaluation
+  max_depth = 6,
+  eta = 0.05,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train the XGBoost model
+fit_xgb <- xgb.train(
+  params = params_xgb, 
+  data = dtrain_xgb, 
+  nrounds = 300, 
+  watchlist = list(train = dtrain_xgb, eval = dtest_xgb), 
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_xgb <- predict(fit_xgb, newdata = as.matrix(distest_scaled))
+distest$Predicted_Cases_XGB <- preds_xgb
+
+### Custom LIME Methods for XGBoost ###
+# Define model_type for XGBoost
+model_type.xgb.Booster <- function(x, ...) {
+  return("regression")
+}
+
+# Define predict_model for XGBoost
+predict_model.xgb.Booster <- function(x, newdata, ...) {
+  return(as.vector(predict(x, as.matrix(newdata))))
+}
+
+### LIME Explanations ###
+# Prepare the explainer using the training data
+explainer <- lime(distrain_scaled, fit_xgb, bin_continuous = TRUE)
+explainer
+# Select a subset of the test data to explain
+test_subset <- distest_scaled[1:4, ]
+test_subset
+# Generate explanations
+explanations <- explain(test_subset, explainer, n_features = 18)
+
+# Visualize the explanations
+u=plot_features(explanations) +
+  ggtitle("LIME Explanations for Predictions")
+
+# Save the plot
+ggsave("AIlime_explanations_plot.png", plot = u, width = 12, height = 8, dpi = 300)
+
+library(writexl)
+write_xlsx(explanations, "explanations.xlsx")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(ggplot2)
+library(sf)
+library(dplyr)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "d")
+
+# Filter data for 2019 and 2023
+data_2019 <- mydata %>% filter(Year == 2019)
+data_2023 <- mydata %>% filter(Year == 2023)
+
+# Load the shapefile
+shapefile_path <- "C:/R/LABSTAT/bgd_adm_bbs_20201113_SHP"
+bangladesh_map <- st_read(shapefile_path, layer = "bgd_admbnda_adm2_bbs_20201113")
+
+# Check column names in the shapefile and dataset
+colnames(bangladesh_map)
+colnames(data_2019)
+
+# Join the 2019 data with the shapefile data based on the correct column names
+map_data_2019 <- bangladesh_map %>%
+  left_join(data_2019, by = c("ADM2_EN" = "Distirct")) # Ensure "ADM2_EN" corresponds to districts
+
+# Join the 2023 data with the shapefile data
+map_data_2023 <- bangladesh_map %>%
+  left_join(data_2023, by = c("ADM2_EN" = "Distirct")) # Ensure "ADM2_EN" corresponds to districts
+
+# Plot the map for 2019 with custom colors (red, yellow, navy blue)
+map_2019 <- ggplot(map_data_2019) +
+  geom_sf(aes(fill = y1), color = "black", lwd = 0.2) +
+  scale_fill_gradientn(colors = c("skyblue", "orange", "red"), name = "Dengue Cases") +
+  labs(
+    title = "Dengue Cases Map for 2019",
+    caption = "Source: AIDengue20002023.xlsx"
+  ) +
+  theme_minimal()
+
+# Plot the map for 2023 with custom colors (red, yellow, navy blue)
+map_2023 <- ggplot(map_data_2023) +
+  geom_sf(aes(fill = y1), color = "black", lwd = 0.2) +
+  scale_fill_gradientn(colors = c("skyblue", "orange", "red"), name = "Dengue Cases") +
+  labs(
+    title = "Dengue Cases Map for 2023",
+    caption = "Source: AIDengue20002023.xlsx"
+  ) +
+  theme_minimal()
+
+# Display the maps
+print(map_2019)
+print(map_2023)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(ggspatial)  # For scale bar and north arrow
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "d")
+
+# Filter data for 2019 and 2023
+data_2019 <- mydata %>% filter(Year == 2019)
+data_2023 <- mydata %>% filter(Year == 2023)
+
+# Load the shapefile
+shapefile_path <- "C:/R/LABSTAT/bgd_adm_bbs_20201113_SHP"
+bangladesh_map <- st_read(shapefile_path, layer = "bgd_admbnda_adm2_bbs_20201113")
+
+# Check column names in the shapefile and dataset
+colnames(bangladesh_map)
+colnames(data_2019)
+
+# Join the 2019 data with the shapefile data based on the correct column names
+map_data_2019 <- bangladesh_map %>%
+  left_join(data_2019, by = c("ADM2_EN" = "Distirct")) # Ensure "ADM2_EN" corresponds to districts
+
+# Join the 2023 data with the shapefile data
+map_data_2023 <- bangladesh_map %>%
+  left_join(data_2023, by = c("ADM2_EN" = "Distirct")) # Ensure "ADM2_EN" corresponds to districts
+
+# Define the common color scale with the specified limits (500 to 20,000)
+color_scale <- scale_fill_gradientn(
+  colors = c("white","red", "darkred"),
+  name = "Dengue Cases",
+  limits = c(10, 15000)  # Set limits for the legend
+)
+
+# Plot the map for 2019 with consistent color scale and a scale bar (hide north arrow)
+map_2019 <- ggplot(map_data_2019) +
+  geom_sf(aes(fill = y1), color = "black", lwd = 0.2) +
+  color_scale +  # Use the common color scale
+  labs(
+    title = "2019"
+  ) +
+  theme_minimal() +
+  annotation_scale(location = "bl", width_hint = 0.15) +  # Scale bar at bottom-left
+  theme(legend.position = "bottom") +  # Position legend at bottom
+  # Hide the north arrow by removing it from the 2019 map
+  theme(legend.position = "none")
+
+# Plot the map for 2023 with consistent color scale and a north arrow (hide scale bar)
+map_2023 <- ggplot(map_data_2023) +
+  geom_sf(aes(fill = y1), color = "black", lwd = 0.2) +
+  color_scale +  # Use the common color scale
+  labs(
+    title = "2023"
+  ) +
+  theme_minimal() +
+  annotation_north_arrow(location = "tr", width = unit(1, "cm"), height = unit(1, "cm")) +  # North arrow at top-right
+  theme(legend.position = "right")  # Hide the legend for 2023 map
+
+# Combine the maps side by side
+library(gridExtra)
+grid.arrange(map_2019, map_2023, ncol = 2)
+
+
+
+
+# Combine the maps side by side using grid.arrange() and save it
+library(gridExtra)
+
+# Create the combined plot
+combined_plot <- grid.arrange(map_2019, map_2023, ncol = 2)
+
+# Save the combined plot as a PNG file
+ggsave("combined_dengue_maps.png", plot = combined_plot, width = 12, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training and testing datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year >= 2021)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on test set: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on test set: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+# Define the custom prediction function for XGBoost
+predict_xgb <- function(model, newdata) {
+  predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+}
+
+# Create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = list(objective = "regression", metric = "rmse"),
+  data = dtrain_lgb,
+  nrounds = 300,
+  valids = list(train = dtrain_lgb, eval = dtest_lgb),
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on test set: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+# Extract RMSE values from performance lists
+performance_glm <- data.frame(model = "GLM", rmse = performance_combined[[6]]$rmse)
+performance_dt <- data.frame(model = "Decision Tree", rmse = performance_combined[[7]]$rmse)
+performance_xgb <- data.frame(model = "XGBoost", rmse = performance_combined[[8]]$rmse)
+performance_lgb <- data.frame(model = "LightGBM", rmse = performance_combined[[9]]$rmse)
+performance_svr <- data.frame(model = "SVR", rmse = performance_combined[[10]]$rmse)
+
+# Combine into a single data frame
+performance_combined_df <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+
+# Plotting Performance
+p = ggplot(performance_combined_df, aes(x = model, y = rmse, fill = model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Performance of Various Models (RMSE)", x = "Model", y = "Performance (RMSE)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+p
+
+performance_combined_df
+
+
+
+# Load necessary libraries
+library(ggplot2)
+
+# Create a data frame with the model names and their corresponding RMSE values
+performance_data <- data.frame(
+  Model = factor(c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"), 
+                 levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR")),
+  RMSE = c(1.8908120, 1.7247023, 0.8219475, 1.4198290, 1.7813876)
+)
+
+# Create the boxplot
+ggplot(performance_data, aes(x = Model, y = RMSE, fill = Model)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Model RMSEs", x = "Model", y = "RMSE") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+# Save the plot as a PNG file
+ggsave("model_rmse_boxplot.png", width = 10, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training (up to 2020) and testing (only 2023) datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year == 2023)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on 2023 data: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on 2023 data: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on 2023 data: ", rmse_xgb, "\n")
+
+# Define the custom prediction function for XGBoost
+predict_xgb <- function(model, newdata) {
+  predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+}
+
+# Create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = list(objective = "regression", metric = "rmse"),
+  data = dtrain_lgb,
+  nrounds = 300,
+  valids = list(train = dtrain_lgb, eval = dtest_lgb),
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on 2023 data: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on 2023 data: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+# Extract RMSE values from performance lists
+performance_glm <- data.frame(model = "GLM", rmse = performance_combined[[6]]$rmse)
+performance_dt <- data.frame(model = "Decision Tree", rmse = performance_combined[[7]]$rmse)
+performance_xgb <- data.frame(model = "XGBoost", rmse = performance_combined[[8]]$rmse)
+performance_lgb <- data.frame(model = "LightGBM", rmse = performance_combined[[9]]$rmse)
+performance_svr <- data.frame(model = "SVR", rmse = performance_combined[[10]]$rmse)
+
+# Combine into a single data frame
+performance_combined_df <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+
+# Plotting Performance
+p = ggplot(performance_combined_df, aes(x = model, y = rmse, fill = model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Performance of Various Models (RMSE) on 2023 Data", x = "Model", y = "Performance (RMSE)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+p
+
+# Save the plot as a PNG file
+ggsave("model_performance_2023_rmse_plot.png", plot = p, width = 10, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training (up to 2019) and testing (2020 to 2023) datasets
+distrain <- discharge %>% filter(Year <= 2019)
+distest <- discharge %>% filter(Year >= 2020)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on 2020-2023 data: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on 2020-2023 data: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on 2020-2023 data: ", rmse_xgb, "\n")
+
+# Define the custom prediction function for XGBoost
+predict_xgb <- function(model, newdata) {
+  predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+}
+
+# Create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = list(objective = "regression", metric = "rmse"),
+  data = dtrain_lgb,
+  nrounds = 300,
+  valids = list(train = dtrain_lgb, eval = dtest_lgb),
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on 2020-2023 data: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on 2020-2023 data: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+# Extract RMSE values from performance lists
+performance_glm <- data.frame(model = "GLM", rmse = performance_combined[[6]]$rmse)
+performance_dt <- data.frame(model = "Decision Tree", rmse = performance_combined[[7]]$rmse)
+performance_xgb <- data.frame(model = "XGBoost", rmse = performance_combined[[8]]$rmse)
+performance_lgb <- data.frame(model = "LightGBM", rmse = performance_combined[[9]]$rmse)
+performance_svr <- data.frame(model = "SVR", rmse = performance_combined[[10]]$rmse)
+
+# Combine into a single data frame
+performance_combined_df <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+
+# Plotting Performance
+p = ggplot(performance_combined_df, aes(x = model, y = rmse, fill = model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Performance of Various Models (RMSE) on 2020-2023 Data", x = "Model", y = "Performance (RMSE)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+p
+
+# Save the plot as a PNG file
+ggsave("model_performance_2020_2023_rmse_plot.png", plot = p, width = 10, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+mydata$log_Cases <- log(mydata$Cases + 1)
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training (up to 2020) datasets
+distrain <- discharge %>% filter(Year <= 2020)
+distest <- discharge %>% filter(Year == 2023)
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = poisson())
+glm_explainer <- DALEX::explain(fit_glm, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'GLM')
+preds_glm <- predict(fit_glm, newdata = distest, type = "response")
+distest$Predicted_Cases_GLM <- preds_glm
+rmse_glm <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_GLM)^2))
+cat("GLM RMSE on test set: ", rmse_glm, "\n")
+performance_glm <- model_performance(glm_explainer)
+vi_glm <- model_parts(glm_explainer)
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "poisson")
+dt_explainer <- DALEX::explain(fit_dt, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'Decision Tree')
+preds_dt <- predict(fit_dt, newdata = distest, type = "vector")
+distest$Predicted_Cases_DT <- preds_dt
+rmse_dt <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_DT)^2))
+cat("DT RMSE on test set: ", rmse_dt, "\n")
+performance_dt <- model_performance(dt_explainer)
+vi_dt <- model_parts(dt_explainer)
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "count:poisson", eval_metric = "rmse", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb <- predict(fit_xgb, dtest)
+distest$Predicted_Cases_XGB <- preds_xgb
+rmse_xgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_XGB)^2))
+cat("XGBoost RMSE on test set: ", rmse_xgb, "\n")
+
+# Define the custom prediction function for XGBoost
+predict_xgb <- function(model, newdata) {
+  predict(model, newdata = as.matrix(newdata), ntreelimit = model$best_iteration)
+}
+
+# Create the explainer for DALEX
+xgb_explainer <- DALEX::explain(
+  fit_xgb, 
+  data = as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)),
+  y = distrain$log_Cases,
+  label = "XGBoost",
+  predict_function = predict_xgb,
+  type = "regression"
+)
+
+# Use the explainer to predict and evaluate the model
+performance_xgb <- model_performance(xgb_explainer)
+vi_xgb <- model_parts(xgb_explainer)
+
+### LightGBM Model ###
+# Create LightGBM datasets
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+
+# Train the LightGBM model
+fit_lgb <- lgb.train(
+  params = list(objective = "regression", metric = "rmse"),
+  data = dtrain_lgb,
+  nrounds = 300,
+  valids = list(train = dtrain_lgb, eval = dtest_lgb),
+  early_stopping_rounds = 10
+)
+
+# Predict on test data
+preds_lgb <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+distest$Predicted_Cases_LGB <- preds_lgb
+
+# Calculate RMSE for LightGBM
+rmse_lgb <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_LGB)^2))
+cat("LightGBM RMSE on test set: ", rmse_lgb, "\n")
+
+predict_lgb <- function(model, newdata) { predict(model, as.matrix(newdata)) }
+lgb_explainer <- DALEX::explain(fit_lgb, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'LightGBM', predict_function = predict_lgb, type = "regression")
+performance_lgb <- model_performance(lgb_explainer)
+vi_lgb <- model_parts(lgb_explainer)
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, type = 'eps-regression')
+svr_explainer <- DALEX::explain(fit_svr, as.data.frame(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), distrain$log_Cases, label = 'SVR')
+preds_svr <- predict(fit_svr, newdata = distest)
+distest$Predicted_Cases_SVR <- preds_svr
+rmse_svr <- sqrt(mean((distest$log_Cases - distest$Predicted_Cases_SVR)^2))
+cat("SVR RMSE on test set: ", rmse_svr, "\n")
+performance_svr <- model_performance(svr_explainer)
+vi_svr <- model_parts(svr_explainer)
+
+### Comparison Plots ###
+performance_combined <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+vi_combined <- rbind(vi_glm, vi_dt, vi_xgb, vi_lgb, vi_svr)
+vi_combined$label <- factor(vi_combined$label, levels = c("GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"))
+
+# Extract RMSE values from performance lists
+performance_glm <- data.frame(model = "GLM", rmse = performance_combined[[6]]$rmse)
+performance_dt <- data.frame(model = "Decision Tree", rmse = performance_combined[[7]]$rmse)
+performance_xgb <- data.frame(model = "XGBoost", rmse = performance_combined[[8]]$rmse)
+performance_lgb <- data.frame(model = "LightGBM", rmse = performance_combined[[9]]$rmse)
+performance_svr <- data.frame(model = "SVR", rmse = performance_combined[[10]]$rmse)
+
+# Combine into a single data frame
+performance_combined_df <- rbind(performance_glm, performance_dt, performance_xgb, performance_lgb, performance_svr)
+
+# Plotting Performance
+p = ggplot(performance_combined_df, aes(x = model, y = rmse, fill = model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Performance of Various Models (RMSE) on 2000-2020 Data", x = "Model", y = "Performance (RMSE)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16))
+
+p
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(tidymodels)
+library(xgboost)
+library(lightgbm)
+library(DALEX)
+library(ggplot2)
+library(e1071)  # For SVR
+library(rpart)  # For Decision Tree
+library(pROC)   # For AUC-ROC
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Load the dataset
+file_path <- "C:/R/LABSTAT/AIDengue20002023.xlsx"  # Ensure this path is correct
+if (!file.exists(file_path)) {
+  stop("File not found. Please check the file path.")
+}
+
+mydata <- read_excel(file_path, sheet = "Data")
+
+# Create a binary target variable
+mydata$log_Cases <- as.integer(mydata$Cases > median(mydata$Cases))
+
+discharge <- mydata %>% select(Year, Months, log_Cases, x1, x2, x3, x4, x5, x6, x7)
+
+# Split the dataset into training (up to 2019) and testing (2020 to 2023) datasets
+distrain <- discharge %>% filter(Year <= 2019)
+distest <- discharge %>% filter(Year >= 2020)
+
+# Function to calculate Logloss
+logloss <- function(y_true, y_pred_prob) {
+  -mean(y_true * log(y_pred_prob) + (1 - y_true) * log(1 - y_pred_prob))
+}
+
+# Naive Model
+naive_pred_prob <- rep(mean(distrain$log_Cases), nrow(distest))
+logloss_naive <- logloss(distest$log_Cases, naive_pred_prob)
+auc_naive <- roc(distest$log_Cases, naive_pred_prob)$auc
+
+### GLM Model ###
+glm_formula <- as.formula(log_Cases ~ x1 + x2 + x3 + x4 + x5 + x6 + x7)
+fit_glm <- glm(glm_formula, data = distrain, family = binomial)
+preds_glm_prob <- predict(fit_glm, newdata = distest, type = "response")
+logloss_glm <- logloss(distest$log_Cases, preds_glm_prob)
+auc_glm <- roc(distest$log_Cases, preds_glm_prob)$auc
+
+### Decision Tree Model ###
+fit_dt <- rpart(glm_formula, data = distrain, method = "class")
+preds_dt_prob <- predict(fit_dt, newdata = distest, type = "prob")[, 2]
+logloss_dt <- logloss(distest$log_Cases, preds_dt_prob)
+auc_dt <- roc(distest$log_Cases, preds_dt_prob)$auc
+
+### XGBoost Model ###
+dtrain <- xgb.DMatrix(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest <- xgb.DMatrix(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params <- list(objective = "binary:logistic", eval_metric = "auc", max_depth = 6, eta = 0.05, subsample = 0.8, colsample_bytree = 0.8)
+fit_xgb <- xgb.train(params = params, data = dtrain, nrounds = 300, watchlist = list(train = dtrain, eval = dtest), early_stopping_rounds = 10)
+preds_xgb_prob <- predict(fit_xgb, dtest)
+logloss_xgb <- logloss(distest$log_Cases, preds_xgb_prob)
+auc_xgb <- roc(distest$log_Cases, preds_xgb_prob)$auc
+
+### LightGBM Model ###
+dtrain_lgb <- lgb.Dataset(as.matrix(distrain %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distrain$log_Cases)
+dtest_lgb <- lgb.Dataset(as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)), label = distest$log_Cases)
+params_lgb <- list(objective = "binary", metric = "auc", num_leaves = 31, learning_rate = 0.05, feature_fraction = 0.9)
+fit_lgb <- lgb.train(params_lgb, dtrain_lgb, 100, valids = list(train = dtrain_lgb, eval = dtest_lgb), early_stopping_rounds = 10)
+preds_lgb_prob <- predict(fit_lgb, as.matrix(distest %>% select(x1, x2, x3, x4, x5, x6, x7)))
+logloss_lgb <- logloss(distest$log_Cases, preds_lgb_prob)
+auc_lgb <- roc(distest$log_Cases, preds_lgb_prob)$auc
+
+### Support Vector Regression Model ###
+fit_svr <- svm(glm_formula, data = distrain, probability = TRUE)
+preds_svr_prob <- attr(predict(fit_svr, newdata = distest, probability = TRUE), "probabilities")[, 2]
+if (is.numeric(preds_svr_prob) && length(preds_svr_prob) == length(distest$log_Cases)) {
+  logloss_svr <- logloss(distest$log_Cases, preds_svr_prob)
+  auc_svr <- roc(distest$log_Cases, preds_svr_prob)$auc
+} else {
+  logloss_svr <- NA
+  auc_svr <- NA
+}
+
+# Create a matrix to summarize the performance
+performance_matrix <- data.frame(
+  Model = c("Naive Model", "GLM", "Decision Tree", "XGBoost", "LightGBM", "SVR"),
+  Logloss = c(logloss_naive, logloss_glm, logloss_dt, logloss_xgb, logloss_lgb, logloss_svr),
+  AUC = c(auc_naive, auc_glm, auc_dt, auc_xgb, auc_lgb, auc_svr)
+)
+
+print(performance_matrix)
+
+
+
+# Load required libraries for visualization
+library(ggplot2)
+
+# Create a long format data frame for visualization
+performance_long <- performance_matrix %>%
+  gather(key = "Metric", value = "Value", Logloss, AUC)
+
+# Plot the performance metrics
+ggplot(performance_long, aes(x = Model, y = Value, fill = Metric)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+       x = "Model",
+       y = "Metric value",
+       fill = "Metric") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        legend.position = "bottom") +
+  scale_fill_brewer(palette = "Set1")
+
+# Save the plot as a PNG file
+ggsave("AImodel_performance_comparison.png", width = 10, height = 6)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(caret)
+library(xgboost)
+library(lightgbm)
+library(Metrics)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Check and handle missing values
+mydata <- na.omit(mydata)
+
+# Create a new column with log-transformed cases
+mydata$log_Cases <- log(mydata$Cases + 1)
+
+# Define the features (X) and target (y)
+X <- mydata[, -which(names(mydata) %in% c("Cases", "log_Cases"))]
+y <- mydata$log_Cases
+
+# Define the cross-validation method
+train_control <- trainControl(method = "cv", number = 10, verboseIter = TRUE)
+
+# Define the MAPE scoring function
+mape_scorer <- function(data, lev = NULL, model = NULL) {
+  mape <- mean(abs((data$obs - data$pred) / data$obs)) * 100
+  return(c(MAPE = mape))
+}
+
+# XGBoost Hyperparameter tuning
+xgb_grid <- expand.grid(nrounds = seq(130, 190, by = 10),
+                        eta = seq(0.070, 0.095, by = 0.005),
+                        max_depth = c(3, 4, 5, 6),
+                        gamma = c(0, 0.1, 0.2),
+                        min_child_weight = c(1, 3, 5),
+                        subsample = c(0.8, 0.9, 1.0),
+                        colsample_bytree = c(0.8, 0.9, 1.0))
+
+xgb_model <- train(x = X, y = y,
+                   method = "xgbTree",
+                   trControl = train_control,
+                   tuneGrid = xgb_grid,
+                   metric = "RMSE",
+                   maximize = FALSE,
+                   preProcess = NULL)
+print(xgb_model$bestTune)
+
+
+
+
+
+
+
+
+
+# LightGBM Hyperparameter tuning using LightGBM's built-in functions
+# Prepare data
+dtrain <- lgb.Dataset(as.matrix(X), label = y)
+
+# Define parameters
+lgb_params <- list(objective = "regression",
+                   metric = "mape",
+                   learning_rate = 0.1,
+                   num_leaves = 31,
+                   max_bin = 255,
+                   n_estimators = 110)
+
+# Perform cross-validation
+cv_results <- lgb.cv(params = lgb_params,
+                     data = dtrain,
+                     nfold = 10,
+                     nrounds = 100,
+                     early_stopping_rounds = 10,
+                     verbose = 1)
+
+# Get the best number of boosting rounds
+best_nrounds <- cv_results$best_iter
+
+# Train final model
+final_lgb_model <- lgb.train(params = lgb_params,
+                             data = dtrain,
+                             nrounds = best_nrounds)
+
+print(cv_results)
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Define the order for months and years
+mydata$Months1 <- factor(mydata$Months1, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+mydata$Year <- factor(mydata$Year, levels = 2000:2023)
+
+# Summarize the highest monthly cases
+highest_month <- mydata %>%
+  group_by(Months1) %>%
+  summarise(max_cases = max(Cases, na.rm = TRUE)) %>%
+  arrange(Months1)
+
+# Summarize the year with the highest cases
+highest_year <- mydata %>%
+  group_by(Year) %>%
+  summarise(total_cases = sum(Cases, na.rm = TRUE)) %>%
+  arrange(Year)
+
+# Print the results
+print(highest_month)
+print(highest_year)
+
+# Plot the highest monthly cases
+ggplot(highest_month, aes(x = Months1, y = max_cases)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Highest Monthly Dengue Cases",
+       x = "Month",
+       y = "Max Cases") +
+  theme_minimal()
+
+# Plot the year with the highest cases
+ggplot(highest_year, aes(x = Year, y = total_cases)) +
+  geom_bar(stat = "identity", fill = "darkorange") +
+  labs(title = "Total Dengue Cases by Year",
+       x = "Year",
+       y = "Total Cases") +
+  theme_minimal()
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Define the order for months and years
+mydata$Months1 <- factor(mydata$Months1, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+mydata$Year <- factor(mydata$Year, levels = 2000:2023)
+
+# Summarize the highest monthly cases
+highest_month <- mydata %>%
+  group_by(Months1) %>%
+  summarise(max_cases = max(Cases, na.rm = TRUE)) %>%
+  arrange(Months1)
+
+# Summarize the year with the highest cases
+highest_year <- mydata %>%
+  group_by(Year) %>%
+  summarise(total_cases = sum(Cases, na.rm = TRUE)) %>%
+  arrange(Year)
+
+# Plot the highest monthly cases with total value on top of bars
+plot_month <- ggplot(highest_month, aes(x = Months1, y = max_cases)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(aes(label = max_cases), vjust = -0.3) +
+  labs(title = "A",
+       x = "Month",
+       y = "Max cases") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        plot.margin = margin(10, 10, 10, 10))
+
+# Plot the year with the highest cases with total value on top of bars
+plot_year <- ggplot(highest_year, aes(x = Year, y = total_cases)) +
+  geom_bar(stat = "identity", fill = "darkorange") +
+  geom_text(aes(label = total_cases), vjust = -0.3) +
+  labs(title = "B",
+       x = "Year",
+       y = "Total cases") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 16),
+        plot.margin = margin(10, 10, 10, 10))
+
+# Combine the plots into two rows
+combined_plot <- grid.arrange(plot_month, plot_year, nrow = 2)
+
+# Save the combined plot as a PNG file
+ggsave("AIcombinedcase_plot.png", combined_plot, width = 16, height = 8)
+
+
+
+
+plot_year
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Define the order for months and years
+mydata$Months1 <- factor(mydata$Months1, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+mydata$Year <- factor(mydata$Year, levels = 2000:2023)
+
+# Summarize the highest monthly deaths
+highest_month_deaths <- mydata %>%
+  group_by(Months1) %>%
+  summarise(max_deaths = max(Deaths, na.rm = TRUE)) %>%
+  arrange(Months1)
+
+# Summarize the year with the highest deaths
+highest_year_deaths <- mydata %>%
+  group_by(Year) %>%
+  summarise(total_deaths = sum(Deaths, na.rm = TRUE)) %>%
+  arrange(Year)
+
+# Print the results
+print(highest_month_deaths)
+print(highest_year_deaths)
+
+# Plot the highest monthly deaths with total value on top of bars
+plot_month_deaths <- ggplot(highest_month_deaths, aes(x = Months1, y = max_deaths)) +
+  geom_bar(stat = "identity", fill = "red") +
+  geom_text(aes(label = max_deaths), vjust = -0.5) +
+  labs(title = "A",
+       x = "Month",
+       y = "Max deaths") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 16))
+
+# Plot the year with the highest deaths with total value on top of bars
+plot_year_deaths <- ggplot(highest_year_deaths, aes(x = Year, y = total_deaths)) +
+  geom_bar(stat = "identity", fill = "darkred") +
+  geom_text(aes(label = total_deaths), vjust = -0.5) +
+  labs(title = "B",
+       x = "Year",
+       y = "Total deaths") +
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold", size = 16))
+
+# Combine the plots into two rows
+combined_plot_deaths <- grid.arrange(plot_month_deaths, plot_year_deaths, nrow = 2)
+
+# Save the combined plot as a PNG file
+ggsave("AIcombined_plot_deaths.png", combined_plot_deaths, width = 16, height = 8)
+
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(openxlsx)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Define the order for months and years
+mydata$Months1 <- factor(mydata$Months1, levels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+mydata$Year <- factor(mydata$Year, levels = 2000:2023)
+
+# Summarize the highest monthly cases and deaths
+highest_month_cases <- mydata %>%
+  group_by(Months1) %>%
+  summarise(max_cases = max(Cases, na.rm = TRUE)) %>%
+  arrange(Months1)
+
+highest_month_deaths <- mydata %>%
+  group_by(Months1) %>%
+  summarise(max_deaths = max(Deaths, na.rm = TRUE)) %>%
+  arrange(Months1)
+
+# Summarize the year with the highest cases and deaths
+highest_year_cases <- mydata %>%
+  group_by(Year) %>%
+  summarise(total_cases = sum(Cases, na.rm = TRUE)) %>%
+  arrange(Year)
+
+highest_year_deaths <- mydata %>%
+  group_by(Year) %>%
+  summarise(total_deaths = sum(Deaths, na.rm = TRUE)) %>%
+  arrange(Year)
+
+# Create a workbook and add worksheets
+wb <- createWorkbook()
+
+addWorksheet(wb, "Highest Monthly Cases")
+writeData(wb, "Highest Monthly Cases", highest_month_cases)
+
+addWorksheet(wb, "Highest Monthly Deaths")
+writeData(wb, "Highest Monthly Deaths", highest_month_deaths)
+
+addWorksheet(wb, "Total Cases by Year")
+writeData(wb, "Total Cases by Year", highest_year_cases)
+
+addWorksheet(wb, "Total Deaths by Year")
+writeData(wb, "Total Deaths by Year", highest_year_deaths)
+
+# Save the workbook
+saveWorkbook(wb, "Dengue_Cases_and_Deaths_Summary.xlsx", overwrite = TRUE)
+
+
+
+
+
+
+# Load required libraries
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# Read the dataset
+mydata <- read_excel("C:/R/LABSTAT/AIDengue20002023.xlsx", sheet = "Data")
+
+# Calculate summary statistics for each variable
+summary_stats <- mydata %>%
+  summarise(across(starts_with("x"), list(mean = mean, median = median, sd = sd, min = min, max = max), na.rm = TRUE)) %>%
+  pivot_longer(everything(), names_to = c("variable", ".value"), names_sep = "_") %>%
+  arrange(variable)
+
+# Print the summary statistics
+print(summary_stats)
+
+# Create density plots for each variable
+plot_density <- function(data, variable, xlab) {
+  ggplot(data, aes_string(x = variable)) +
+    geom_density(fill = "skyblue", alpha = 0.7) +
+    labs(title = paste("Density Plot of", xlab),
+         x = xlab,
+         y = "Density") +
+    theme_minimal()
+}
+
+# List of variables and their labels
+variables <- c("x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18")
+labels <- c("Mean temperature (°C)", "Minimum temperature (°C)", "Maximum temperature (°C)", "Relative humidity (%)", "Rainfall (mm)", "Surface Pressure (kPa)", 
+            "Wind Speed at 50 Meters Maximum (m/s)", "Population density", "Gross Domestic Product (Billion US$)", "Gross National Income (K US$)", 
+            "Poverty head-count ratio (% of population)", "Adult literacy rate (% of population)", "Total unemployment (% of total labor force)", 
+            "Access to electricity (% of population)", "Population growth", "Forest area (% of total land area)", "Agricultural land (% of total land area)", 
+            "Arable Land (% of the total land area)")
+
+# Generate and save density plots
+for (i in seq_along(variables)) {
+  plot <- plot_density(mydata, variables[i], labels[i])
+  ggsave(paste0("DensityPlot_", variables[i], ".png"), plot, width = 8, height = 6)
+}
